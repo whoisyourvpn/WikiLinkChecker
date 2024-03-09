@@ -1,6 +1,6 @@
 import requests
 import re
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 
 def check_link_status(url):
     try:
@@ -24,8 +24,17 @@ def check_archive(url):
     except requests.RequestException:
         return 'Error Checking Archive', 'N/A'
 
+def extract_page_name(input_text):
+    if input_text.startswith('http'):
+        url_parts = urlparse(input_text)
+        page_name = url_parts.path.split('/')[-1]
+    else:
+        page_name = input_text
+    return page_name
+
 def main():
-    page_name = input('Enter the Wikipedia page name: ')
+    input_text = input('Enter the Wikipedia page name or URL: ')
+    page_name = extract_page_name(input_text)
     formatted_page_name = quote(page_name.replace(' ', '_'))
     
     url = "https://en.wikipedia.org/w/api.php"
