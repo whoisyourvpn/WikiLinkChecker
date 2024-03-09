@@ -1,6 +1,5 @@
 import requests
 import re
-from collections import Counter
 
 def check_link_status(url):
     try:
@@ -16,39 +15,25 @@ def main():
     page_name = input('Enter the Wikipedia page name: ')
     api_url = f'https://en.wikipedia.org/w/rest.php/v1/page/{page_name}'
     response = requests.get(api_url)
-    article_content = response.json().get('source', '')
+    page_content = response.json()['source']
 
-    cite_web_templates = re.findall(r'\{\{cite web(.*?)\}\}', article_content, re.DOTALL)
+    # Find URLs within {{cite web}} and <ref> tags
+    cite_web_urls = re.findall(r'\{\{cite web[^}]*\|url=([^|}]+)', page_content, re.IGNORECASE)
+    ref_urls = re.findall(r'<ref[^>]*>(?:[^<]*<a[^>]*href="([^"]+)"[^>]*>[^<]*</a>[^<]*)</ref>', page_content, re.IGNORECASE)
+    all_urls = set(cite_web_urls + ref_urls)  # Combine and remove duplicates
 
-    urls = []
-    skipped_archived_links = 0
-    for template in cite_web_templates:
-        url_match = re.search(r'url=(https?://[^\s|]+)', template)
-        archive_url_match = re.search(r'archive-url=(https?://[^\s|]+)', template)
-        if url_match:
-            url = url_match.group(1)
-            if not archive_url_match:
-                urls.append(url)
-            else:
-                skipped_archived_links += 1
+    # Count skipped archived links
+    skipped_archived_links = sum(1 for url in all_urls if 'archive.org' in url)
 
-    unique_urls = set(urls)
-    total_links = len(unique_urls)
-    processed_links = 0
-
-    print(f'Total unique external links to process: {total_links}')
-    print(f'Skipped archived links: {skipped_archived_links}')
-
-    output_filename = f'{page_name}.txt'
+    output_filename = f'{page_name}_results.txt'
     with open(output_filename, 'w') as output_file:
-        for url in unique_urls:
-            status = check_link_status(url)
-            output_file.write(f'URL: {url}\n')
-            output_file.write(f'|- Status: {status}\n|\n')
-            processed_links += 1
-            print(f'Processed {processed_links} of {total_links} links.')
+        for url in all_urls:
+            if 'archive.org' not in url:
+                status = check_link_status(url)
+                output_file.write(f'URL: {url}\n|- Status: {status}\n|\n')
 
     print(f'Results written to {output_filename}')
+    print(f'Skipped archived links: {skipped_archived_links}')
 
 if __name__ == '__main__':
     main()
