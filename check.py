@@ -42,7 +42,7 @@ def main():
     reflist_divs = soup.find_all('div', class_='reflist')
     external_links = []
     for div in reflist_divs:
-        external_links.extend([link for link in div.find_all('a', href=True) if link['href'].startswith('http') and not any(domain in link['href'] for domain in ['archive.org', 'wikimedia.org', 'wikipedia.org', 'wikidata.org'])])
+        external_links.extend([link for link in div.find_all('a', class_='external text', href=True) if link['href'].startswith('http') and not any(domain in link['href'] for domain in ['archive.org', 'wikimedia.org', 'wikipedia.org', 'wikidata.org'])])
 
     total_links = len(external_links)
     processed_links = 0
