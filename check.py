@@ -27,9 +27,25 @@ def check_archive(url):
 def main():
     page_name = input('Enter the Wikipedia page name: ')
     formatted_page_name = quote(page_name.replace(' ', '_'))
-    api_url = f'https://en.wikipedia.org/w/rest.php/v1/page/{formatted_page_name}'
-    response = requests.get(api_url)
-    page_content = response.json()['source']
+    
+    url = "https://en.wikipedia.org/w/api.php"
+    params = {
+        "action": "query",
+        "prop": "revisions",
+        "titles": formatted_page_name,
+        "rvprop": "content",
+        "format": "json"
+    }
+
+    response = requests.get(url, params=params)
+    data = response.json()
+
+    # Access the source in the revisions section
+    pages = data['query']['pages']
+    for page_id in pages:
+        page = pages[page_id]
+        if 'revisions' in page:
+            page_content = page['revisions'][0]['*']
 
     # Find URLs within {{cite web}} and <ref> tags
     cite_web_urls = re.findall(r'\{\{cite web[^}]*\|url=([^|}]+)', page_content, re.IGNORECASE)
