@@ -41,7 +41,7 @@ def main():
     with open(output_filename, 'w') as output_file:
         external_links = soup.find_all('a', href=True)
         for link in external_links:
-            if link['href'].startswith('http') and not any(domain in link['href'] for domain in ['wikipedia.org', 'wikidata.org']):
+            if link['href'].startswith('http') and not any(domain in link['href'] for domain in ['archive.org', 'wikipedia.org', 'wikidata.org']):
                 status = check_link_status(link['href'])
                 archive_status, archived_page = check_archive(link['href'])
                 output_file.write(f'URL: {link["href"]}\n')
