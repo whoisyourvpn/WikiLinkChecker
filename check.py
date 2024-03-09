@@ -39,26 +39,27 @@ def main():
     page_name = urlparse(wikipedia_url).path.split('/')[-1]
     output_filename = f'{page_name}.txt'
 
-    external_links = []
+    reflist_links = set()
+    for div in soup.find_all('div', class_='reflist'):
+        reflist_links.update(div.find_all('a', href=True))
+    external_links = set(soup.find_all('a', class_='external text', href=True))
+    all_links = reflist_links.union(external_links)
+    filtered_links = [link for link in all_links if link['href'].startswith('http') and not any(domain in link['href'] for domain in ['archive.org', 'wikimedia.org', 'wikipedia.org', 'wikidata.org'])]
 
-    # Find all div elements with class "reflist"
-    reflist_divs = soup.find_all('div', class_='reflist')
-    for div in reflist_divs:
-        external_links.extend([link for link in div.find_all('a', href=True) if link['href'].startswith('http') and not any(domain in link['href'] for domain in ['archive.org', 'wikimedia.org', 'wikipedia.org', 'wikidata.org'])])
+    unique_urls = set()
+    for link in filtered_links:
+        unique_urls.add(link['href'])
 
-    # Find all a elements with class "external text"
-    external_links.extend([link for link in soup.find_all('a', class_='external text', href=True) if link['href'].startswith('http') and not any(domain in link['href'] for domain in ['archive.org', 'wikimedia.org', 'wikipedia.org', 'wikidata.org'])])
-
-    total_links = len(external_links)
+    total_links = len(unique_urls)
     processed_links = 0
 
     print(f'Total external links to process: {total_links}')
 
     with open(output_filename, 'w') as output_file:
-        for link in external_links:
-            status = check_link_status(link['href'])
-            archive_status, archived_page = check_archive(link['href'])
-            output_file.write(f'URL: {link["href"]}\n')
+        for url in unique_urls:
+            status = check_link_status(url)
+            archive_status, archived_page = check_archive(url)
+            output_file.write(f'URL: {url}\n')
             output_file.write(f'|- Status: {status}\n')
             output_file.write(f'|- Archive: {archive_status}\n')
             output_file.write(f'|- Archived Page: {archived_page}\n|\n')
